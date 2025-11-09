@@ -1,0 +1,64 @@
+name: Multi-Platform Matrix Build (f8f1c09)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [16, 18, 20]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: matrix-f8f1c09
+        run: |
+          echo "Matrix identifier step"
+          echo "OS=${{ matrix.os }}  Node=${{ matrix.node-version }}"
+
+      - name: Install dependencies (example - skip if none)
+        if: hashFiles('package.json') != ''
+        run: |
+          npm ci || echo "No package.json present; skipping install."
+
+      - name: Build (example placeholder)
+        run: |
+          echo "Simulated build for OS=${{ matrix.os }} Node=${{ matrix.node-version }}"
+          echo "Timestamp: $(date)" >> build-info.txt
+          echo "OS: ${{ matrix.os }}" >> build-info.txt
+          echo "Node: ${{ matrix.node-version }}" >> build-info.txt
+          echo "Commit: $GITHUB_SHA" >> build-info.txt
+          echo "Repository: $GITHUB_REPOSITORY" >> build-info.txt
+
+      - name: Verify artifact is non-empty
+        run: |
+          test -s build-info.txt || (echo "Artifact file is empty!" && exit 1)
+          wc -c build-info.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-f8f1c09-${{ matrix.os }}-node${{ matrix.node-version }}
+          path: build-info.txt
+          retention-days: 14
+
+  summary:
+    # Optional aggregation job to list all artifacts (runs after all matrix variants)
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: matrix-f8f1c09 summary
+        run: echo "All matrix jobs completed (total=${{ needs.build.outputs.count || 'see UI' }})"
